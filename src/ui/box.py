@@ -19,6 +19,9 @@ ML = '├'
 MR = '┤'
 
 _ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+_ANSI_OR_CHAR_RE = re.compile(r'\x1b\[[0-9;]*m|.', re.DOTALL)
+_RESET = '\033[0m'
+_TRUNC_SUFFIX = '...'
 
 
 def _strip_ansi(text: str) -> str:
@@ -44,20 +47,33 @@ def _pad(text: str, width: int) -> str:
 
 
 def _truncate_to_display_width(text: str, max_width: int) -> str:
+    if max_width <= 0:
+        return ''
     if display_width(text) <= max_width:
         return text
+    reserve = display_width(_TRUNC_SUFFIX)
+    budget = max(0, max_width - reserve)
     out: list[str] = []
     w = 0
-    reserve = display_width('…')
-    budget = max_width - reserve
-    for ch in unicodedata.normalize('NFC', text):
-        ea = unicodedata.east_asian_width(ch)
+    had_ansi = False
+
+    for token in _ANSI_OR_CHAR_RE.findall(unicodedata.normalize('NFC', text)):
+        if _ANSI_RE.fullmatch(token):
+            had_ansi = True
+            out.append(token)
+            continue
+
+        ea = unicodedata.east_asian_width(token)
         cw = 2 if ea in ('F', 'W') else 1
         if w + cw > budget:
             break
-        out.append(ch)
+        out.append(token)
         w += cw
-    return ''.join(out) + '…'
+
+    truncated = ''.join(out) + _TRUNC_SUFFIX
+    if had_ansi and not truncated.endswith(_RESET):
+        truncated += _RESET
+    return truncated
 
 
 def truncate_to_width(text: str, max_width: int) -> str:
