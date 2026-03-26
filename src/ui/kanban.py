@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 
 from . import box
 from ..backlog.model import Status, Backlog
@@ -14,6 +15,7 @@ BOLD = '\033[1m'
 RESET = '\033[0m'
 ID_COLOR = '\033[38;2;108;123;202m'
 SESSION_COLOR = '\033[38;2;241;205;97m'
+RED = '\033[38;2;234;84;85m'
 
 # Per column: at most this many cards on the board; remainder shown as "+N more".
 K_MAX_VISIBLE_CARDS = 10
@@ -72,7 +74,9 @@ def _render_board(board: dict[Status, list[Backlog]]) -> None:
                     styled_title = f'{BOLD}{b.title}{RESET}'
                     title_cells.append(f'{colored_id} {styled_title}')
                     session_text = _format_session(b.session_start, b.session_end)
-                    colored_session = f'{SESSION_COLOR}{session_text}{RESET}' if session_text else ''
+                    dday_text = _format_dday(b.session_end)
+                    dday_tag = f' | {RED}{dday_text}{RESET}' if dday_text else ''
+                    colored_session = f'{SESSION_COLOR}{session_text}{RESET}{dday_tag}' if session_text else ''
                     session_cells.append(colored_session)
                 else:
                     title_cells.append('')
@@ -116,6 +120,27 @@ def _format_session(start: str, end: str) -> str:
     if not start and not end:
         return ''
     return f'{_shorten_date(start)} ~ {_shorten_date(end)}'
+
+
+def _format_dday(end: str) -> str:
+    target = _parse_date(end)
+    if target is None:
+        return ''
+    delta = (target - date.today()).days
+    if delta >= 0:
+        return f'D-{delta}'
+    return f'D+{abs(delta)}'
+
+
+def _parse_date(value: str) -> date | None:
+    if not value:
+        return None
+    for fmt in ('%Y-%m-%d', '%Y/%m/%d'):
+        try:
+            return datetime.strptime(value[:10], fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _shorten_date(value: str) -> str:
