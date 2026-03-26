@@ -142,8 +142,12 @@ def _load_all(project: Project, status: Status) -> list[Backlog]:
 
 def _render_box(title: str, lines: list[str]) -> None:
     print(box.top(title))
+    if not lines or lines[0] != '':
+        print(box.empty_row())
     for line in lines:
         print(box.row(line))
+    if not lines or lines[-1] != '':
+        print(box.empty_row())
     print(box.bottom())
     print()
 
