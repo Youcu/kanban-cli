@@ -32,6 +32,13 @@ def run() -> None:
             print('  Goodbye.\n')
             break
 
+        if cmd in ('a', 'all'):
+            if not projects:
+                message = '  No projects yet.'
+                continue
+            _run_aggregate_kanban_session(projects)
+            continue
+
         if cmd == 'n':
             name = renderer.render_project_name_prompt()
             if not name:
@@ -53,7 +60,51 @@ def run() -> None:
                 message = f'  Invalid selection: {raw}'
                 continue
 
-        message = f'  Unknown command: "{raw}"  (enter a number, N, or Q)'
+        message = (
+            f'  Unknown command: "{raw}"  '
+            '(number, N, A, or Q)'
+        )
+
+
+def _run_aggregate_kanban_session(projects) -> None:
+    message: str | None = None
+    todo_sort = backlog_repo.TodoSortMode.CREATION
+
+    while True:
+        clear_screen()
+        print()
+        board = backlog_repo.load_aggregate_board(projects, todo_sort=todo_sort)
+        kanban_renderer.render_aggregate_kanban(
+            board,
+            project_count=len(projects),
+        )
+
+        if message:
+            print(f'     {message}')
+            print()
+            message = None
+
+        raw = kanban_renderer.render_kanban_prompt()
+        cmd = raw.lower()
+
+        if cmd in ('b', 'back'):
+            print()
+            break
+
+        if cmd == 'opt':
+            message = opt_session.run_aggregate_opt_session(projects)
+            continue
+
+        if cmd == 'sort':
+            chosen = todo_sort_prompt.prompt_todo_sort(todo_sort)
+            if chosen is not None:
+                todo_sort = chosen
+            continue
+
+        message = (
+            f'  Unknown command: "{raw}"  '
+            '(B: back, opt: options, sort: Todo order)'
+        )
 
 
 def _run_kanban_session(project) -> None:

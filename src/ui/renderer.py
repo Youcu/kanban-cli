@@ -32,7 +32,7 @@ def render_project_list(projects: list[Project], message: Optional[str] = None) 
 
     print(box.divider())
 
-    print(box.row(box.pad_between('[N] New Project', '[Q] Quit')))
+    print(box.row('  [N] New project   [A] All boards   [Q] Quit'))
     print(box.bottom())
 
     if message:
@@ -46,6 +46,33 @@ def render_prompt() -> str:
         return input('❯ ').strip()
     except (EOFError, KeyboardInterrupt):
         return 'q'
+
+
+def prompt_project_choice(projects: list[Project], *, title: str) -> Project | None:
+    """Pick a project by number, or cancel with B. Sorted by name for stable labels."""
+    ordered = sorted(projects, key=lambda p: p.name.casefold())
+    print(box.top(title))
+    print(box.empty_row())
+    for i, p in enumerate(ordered, start=1):
+        print(box.row(f'  [{i}]  {p.name}'))
+    print(box.empty_row())
+    print(box.row('  [B] Cancel'))
+    print(box.bottom())
+    print()
+    while True:
+        try:
+            raw = input('❯ ').strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+        cmd = raw.lower()
+        if cmd in ('b', 'back', ''):
+            return None
+        if raw.isdigit():
+            idx = int(raw) - 1
+            if 0 <= idx < len(ordered):
+                return ordered[idx]
+        print(f'  Invalid: "{raw}"  (number or B)')
+        print()
 
 
 def render_project_name_prompt() -> str:

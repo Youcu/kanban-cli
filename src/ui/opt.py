@@ -2,12 +2,112 @@
 
 from __future__ import annotations
 
-from . import box, create_flow, view_flow, edit_flow, move_flow, delete_flow
+from . import box, create_flow, view_flow, edit_flow, move_flow, delete_flow, renderer
 from .terminal import clear_screen
 from ..backlog.model import Status
 from ..project.model import Project
 
 _UNAVAILABLE = '  (no backlogs)'
+
+
+def _pick_project(projects: list[Project], *, title: str) -> Project | None:
+    if len(projects) == 1:
+        return projects[0]
+    return renderer.prompt_project_choice(projects, title=title)
+
+
+def run_aggregate_opt_session(projects: list[Project]) -> str | None:
+    """Options menu for the all-projects kanban; asks which project when needed."""
+    has_backlogs = any(_any_backlogs(p) for p in projects)
+
+    clear_screen()
+    print()
+    _render_opt_menu(has_backlogs)
+
+    while True:
+        try:
+            raw = input('❯ ').strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return None
+
+        if raw == '1':
+            # All Boards: always pick target project (even if only one exists).
+            target = renderer.prompt_project_choice(
+                projects,
+                title='Create backlog — project',
+            )
+            if target is None:
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            return create_flow.run_create_flow(target)
+
+        if raw == '2':
+            if not has_backlogs:
+                print('  No backlogs to view.')
+                print()
+                continue
+            target = _pick_project(projects, title='View backlog — project')
+            if target is None:
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            result = view_flow.run_view_flow(target)
+            if result is view_flow.ViewFlowResult.BACK_TO_OPT_MENU:
+                has_backlogs = any(_any_backlogs(p) for p in projects)
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            return result
+
+        if raw == '3':
+            if not has_backlogs:
+                print('  No backlogs to edit.')
+                print()
+                continue
+            target = _pick_project(projects, title='Edit backlog — project')
+            if target is None:
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            return edit_flow.run_edit_flow(target)
+
+        if raw == '4':
+            if not has_backlogs:
+                print('  No backlogs to move.')
+                print()
+                continue
+            target = _pick_project(projects, title='Move backlog — project')
+            if target is None:
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            return move_flow.run_move_flow(target)
+
+        if raw == '5':
+            if not has_backlogs:
+                print('  No backlogs to delete.')
+                print()
+                continue
+            target = _pick_project(projects, title='Delete backlog — project')
+            if target is None:
+                clear_screen()
+                print()
+                _render_opt_menu(has_backlogs)
+                continue
+            return delete_flow.run_delete_flow(target)
+
+        if raw in ('b', 'back', ''):
+            return None
+
+        print(f'  Unknown: "{raw}"  (1–5, B to back)')
+        print()
 
 
 def run_opt_session(project: Project) -> str | None:

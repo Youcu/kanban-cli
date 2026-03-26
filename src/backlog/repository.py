@@ -20,6 +20,27 @@ class TodoSortMode(Enum):
     DDAY = auto()
 
 
+def load_aggregate_board(
+    projects: list[Project],
+    *,
+    todo_sort: TodoSortMode = TodoSortMode.CREATION,
+) -> dict[Status, list[Backlog]]:
+    """Merge boards from every project; TODO is sorted once across all items."""
+    if not projects:
+        return {s: [] for s in Status}
+    ordered = sorted(projects, key=lambda p: p.name.casefold())
+    boards = [load_board(p, todo_sort=todo_sort) for p in ordered]
+    merged: dict[Status, list[Backlog]] = {s: [] for s in Status}
+    all_todo: list[Backlog] = []
+    for b in boards:
+        all_todo.extend(b[Status.TODO])
+    merged[Status.TODO] = _sort_todo(all_todo, todo_sort)
+    for s in (Status.INPROGRESS, Status.REVIEW, Status.DONE):
+        for b in boards:
+            merged[s].extend(b[s])
+    return merged
+
+
 def load_board(
     project: Project,
     *,

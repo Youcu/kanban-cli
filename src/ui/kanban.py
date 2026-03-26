@@ -37,6 +37,17 @@ def render_kanban(
     print()
 
 
+def render_aggregate_kanban(
+    board: dict[Status, list[Backlog]],
+    *,
+    project_count: int,
+) -> None:
+    _render_aggregate_header(project_count)
+    _render_board(board)
+    _render_aggregate_command_bar()
+    print()
+
+
 def render_kanban_prompt() -> str:
     try:
         return input('❯ ').strip()
@@ -46,6 +57,10 @@ def render_kanban_prompt() -> str:
 
 def _render_project_label(project: Project) -> None:
     print(f'[ Project: {project.name} ]')
+
+
+def _render_aggregate_header(project_count: int) -> None:
+    print(f'[ All projects — {project_count} board(s) ]')
 
 
 def _render_board(board: dict[Status, list[Backlog]]) -> None:
@@ -76,7 +91,11 @@ def _render_board(board: dict[Status, list[Backlog]]) -> None:
                     session_text = _format_session(b.session_start, b.session_end)
                     dday_text = _format_dday(b.session_end)
                     dday_tag = f' | {RED}{dday_text}{RESET}' if dday_text else ''
-                    colored_session = f'{SESSION_COLOR}{session_text}{RESET}{dday_tag}' if session_text else ''
+                    colored_session = (
+                        f'{SESSION_COLOR}{session_text}{RESET}{dday_tag}'
+                        if session_text
+                        else ''
+                    )
                     session_cells.append(colored_session)
                 else:
                     title_cells.append('')
@@ -101,6 +120,22 @@ def _render_board(board: dict[Status, list[Backlog]]) -> None:
 
 
 def _render_command_bar() -> None:
+    title = ' Commands '
+    top_line = box.TL + box.H * 4 + title + box.H * (_CMD_H_INNER - 4 - len(title)) + box.TR
+
+    left = '[opt] Options     [sort] Todo order'
+    right = '[B] Back'
+    gap = _CMD_CONTENT - box.display_width(left) - box.display_width(right)
+    row = left + ' ' * max(1, gap) + right
+
+    print(top_line)
+    print(box.V + ' ' + ' ' * _CMD_CONTENT + ' ' + box.V)
+    print(box.V + ' ' + row + ' ' + box.V)
+    print(box.V + ' ' + ' ' * _CMD_CONTENT + ' ' + box.V)
+    print(box.BL + box.H * _CMD_H_INNER + box.BR)
+
+
+def _render_aggregate_command_bar() -> None:
     title = ' Commands '
     top_line = box.TL + box.H * 4 + title + box.H * (_CMD_H_INNER - 4 - len(title)) + box.TR
 
