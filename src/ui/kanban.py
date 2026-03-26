@@ -13,6 +13,7 @@ LABELS   = ['TODO', 'INPROGRESS', 'REVIEW', 'DONE']
 BOLD = '\033[1m'
 RESET = '\033[0m'
 ID_COLOR = '\033[38;2;108;123;202m'
+SESSION_COLOR = '\033[38;2;241;205;97m'
 
 # Per column: at most this many cards on the board; remainder shown as "+N more".
 K_MAX_VISIBLE_CARDS = 10
@@ -68,8 +69,11 @@ def _render_board(board: dict[Status, list[Backlog]]) -> None:
                 if i < len(items):
                     b = items[i]
                     colored_id = f'[{ID_COLOR}{b.id}{RESET}]'
-                    title_cells.append(f'{colored_id} {b.title}')
-                    session_cells.append(_format_session(b.session_start, b.session_end))
+                    styled_title = f'{BOLD}{b.title}{RESET}'
+                    title_cells.append(f'{colored_id} {styled_title}')
+                    session_text = _format_session(b.session_start, b.session_end)
+                    colored_session = f'{SESSION_COLOR}{session_text}{RESET}' if session_text else ''
+                    session_cells.append(colored_session)
                 else:
                     title_cells.append('')
                     session_cells.append('')
