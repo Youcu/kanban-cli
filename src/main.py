@@ -12,6 +12,7 @@ from src.ui import todo_sort as todo_sort_prompt
 from src.ui.terminal import clear_screen
 from src.project import repository, manager
 from src.backlog import repository as backlog_repo
+from src import kanban_git_backup
 
 
 def run() -> None:
@@ -69,6 +70,10 @@ def run() -> None:
             message = f'  Project "{chosen.name}" removed.'
             continue
 
+        if cmd in ('b', 'backup'):
+            message = f'  {kanban_git_backup.run_git_backup()}'
+            continue
+
         if cmd.isdigit():
             index = int(cmd) - 1
             if 0 <= index < len(projects):
@@ -80,7 +85,7 @@ def run() -> None:
 
         message = (
             f'  Unknown command: "{raw}"  '
-            '(number, N, A, R, or Q)'
+            '(number, N, A, R, B, or Q)'
         )
 
 

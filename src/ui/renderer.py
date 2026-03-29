@@ -33,7 +33,8 @@ def render_project_list(projects: list[Project], message: Optional[str] = None) 
     print(box.divider())
 
     print(box.row('  [N] New project      [A] All boards'))
-    print(box.row('  [R] Remove project   [Q] Quit'))
+    print(box.row('  [R] Remove project   [B] Backup'))
+    print(box.row('  [Q] Quit'))
     print(box.bottom())
 
     if message:
