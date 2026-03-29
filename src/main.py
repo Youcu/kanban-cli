@@ -51,6 +51,24 @@ def run() -> None:
             message = f'  Project "{project.name}" created.'
             continue
 
+        if cmd in ('r', 'remove'):
+            if not projects:
+                message = '  No projects yet.'
+                continue
+            chosen = renderer.prompt_remove_project_selection(projects)
+            if chosen is None:
+                continue
+            if not renderer.prompt_remove_project_confirm(chosen):
+                message = '  Remove cancelled.'
+                continue
+            try:
+                manager.delete_project(chosen)
+            except (ValueError, FileNotFoundError, OSError) as exc:
+                message = f'  Could not remove project: {exc}'
+                continue
+            message = f'  Project "{chosen.name}" removed.'
+            continue
+
         if cmd.isdigit():
             index = int(cmd) - 1
             if 0 <= index < len(projects):
@@ -62,7 +80,7 @@ def run() -> None:
 
         message = (
             f'  Unknown command: "{raw}"  '
-            '(number, N, A, or Q)'
+            '(number, N, A, R, or Q)'
         )
 
 

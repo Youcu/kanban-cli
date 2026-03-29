@@ -32,7 +32,8 @@ def render_project_list(projects: list[Project], message: Optional[str] = None) 
 
     print(box.divider())
 
-    print(box.row('  [N] New project   [A] All boards   [Q] Quit'))
+    print(box.row('  [N] New project      [A] All boards'))
+    print(box.row('  [R] Remove project   [Q] Quit'))
     print(box.bottom())
 
     if message:
@@ -72,6 +73,61 @@ def prompt_project_choice(projects: list[Project], *, title: str) -> Project | N
             if 0 <= idx < len(ordered):
                 return ordered[idx]
         print(f'  Invalid: "{raw}"  (number or B)')
+        print()
+
+
+def prompt_remove_project_selection(projects: list[Project]) -> Project | None:
+    """Pick a project to remove by list index, or cancel with B. Order matches the main list."""
+    print()
+    print(box.top('Remove Project'))
+    print(box.empty_row())
+    print(box.row('  Pick a project to remove:'))
+    print(box.empty_row())
+    for i, p in enumerate(projects, start=1):
+        print(box.row(f'  [{i}]  {p.name}'))
+    print(box.empty_row())
+    print(box.row('  [B] Cancel'))
+    print(box.bottom())
+    print()
+    while True:
+        try:
+            raw = input('❯ ').strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+        cmd = raw.lower()
+        if cmd in ('b', 'back', ''):
+            return None
+        if raw.isdigit():
+            idx = int(raw) - 1
+            if 0 <= idx < len(projects):
+                return projects[idx]
+        print(f'  Invalid: "{raw}"  (number or B)')
+        print()
+
+
+def prompt_remove_project_confirm(project: Project) -> bool:
+    print()
+    print(box.top('Confirm Remove Project'))
+    print(box.empty_row())
+    print(box.row(f'  "{project.name}"'))
+    print(box.empty_row())
+    print(box.row('  All backlogs and data under this'))
+    print(box.row('  project will be deleted permanently.'))
+    print(box.empty_row())
+    print(box.row('    [Y] Confirm         [N] Cancel'))
+    print(box.bottom())
+    print()
+    while True:
+        try:
+            raw = input('❯ ').strip()
+        except (EOFError, KeyboardInterrupt):
+            return False
+        v = raw.lower()
+        if v == 'y':
+            return True
+        if v in ('n', ''):
+            return False
+        print(f'  Invalid: "{raw}"  (Y or N)')
         print()
 
 
